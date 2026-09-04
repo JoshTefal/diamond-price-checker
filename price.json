@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "checked_at": "2026-09-04T20:53:01.079Z",
+  "diamond_code": "LG789634401",
+  "error": "page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#diamondSearch') to be visible\n"
+}
