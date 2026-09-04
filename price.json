@@ -1,6 +1,21 @@
 {
-  "success": false,
-  "checked_at": "2026-09-04T21:37:06.960Z",
-  "diamond_code": "LG789634401",
-  "error": "page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#diamondSearch')\u001b[22m\n"
+  "success": true,
+  "checked_at": "2026-09-04T21:41:50.155Z",
+  "source": "Diamonds Factory Canada",
+  "product": "CLRN07576_01",
+  "diamond": {
+    "diamond_code": "LG789634401",
+    "price": "$1,819",
+    "carat": "2.04",
+    "color": "E",
+    "clarity": "VVS2",
+    "certificate": "IGI",
+    "certificate_number": "789634401",
+    "cut": "",
+    "polish": "EX",
+    "symmetry": "EX",
+    "fluorescence": "FNO",
+    "measurements": "10.34 x 7.23 x 4.30",
+    "stone_id": "115977"
+  }
 }
