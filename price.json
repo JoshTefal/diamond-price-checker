@@ -1,8 +1,19 @@
 {
   "success": true,
-  "checked_at": "2026-09-04T21:41:50.155Z",
+  "checked_at": "2026-09-04T21:49:01.118Z",
   "source": "Diamonds Factory Canada",
-  "product": "CLRN07576_01",
+  "currency": "CAD",
+  "product": {
+    "code": "CLRN07576_01",
+    "name": "Hidden Halo Diamond Engagement Ring"
+  },
+  "configuration": {
+    "metal": "Platinum",
+    "metal_code": "PL_950_W",
+    "ring_size": "R15_7",
+    "stone_type": "Lab-grown",
+    "stone_shape": "Oval"
+  },
   "diamond": {
     "diamond_code": "LG789634401",
     "price": "$1,819",
@@ -17,5 +28,13 @@
     "fluorescence": "FNO",
     "measurements": "10.34 x 7.23 x 4.30",
     "stone_id": "115977"
+  },
+  "pricing": {
+    "setting_price": 3890,
+    "diamond_price": 1819,
+    "subtotal": 5709,
+    "discount": 856.35,
+    "discount_percent": 15,
+    "final_price": 4852.65
   }
 }
