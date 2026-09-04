@@ -30,7 +30,7 @@ jobs:
 
       - name: Check Diamonds Factory price
         env:
-          DIAMOND_CODE: LG789634401
+          DIAMOND_CODE: LG770685786
         run: node check-price.mjs
 
       - name: Upload debug files
@@ -62,4 +62,3 @@ jobs:
             git commit -m "Update diamond price"
             git push
           )
-         
