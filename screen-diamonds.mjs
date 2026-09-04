@@ -164,6 +164,7 @@ try {
   let expectedTotal = null;
   let firstPayload = null;
   let paginationComplete = false;
+  let stopReason = null;
   const MAX_PAGES = 500;
 
   for (let pageNumber = 1; pageNumber <= MAX_PAGES; pageNumber++) {
@@ -195,14 +196,40 @@ try {
 
     if (expectedTotal === null) {
       expectedTotal = parseNumber(json.stone_total);
-      console.log(`Diamonds Factory reports ${expectedTotal ?? "unknown"} total stones within the requested price range.`);
+      console.log(`Diamonds Factory reports ${expectedTotal ?? "unknown"} total stones for the server response.`);
     }
 
     const stones = Array.isArray(json.stones) ? json.stones : [];
+    const finitePagePrices = stones
+      .map(s => priceNumber(s.csprice ?? s.price))
+      .filter(Number.isFinite);
+    const minPagePrice = finitePagePrices.length ? Math.min(...finitePagePrices) : null;
+    const maxPagePrice = finitePagePrices.length ? Math.max(...finitePagePrices) : null;
+
+    // The endpoint is requested with order=asc. If even the cheapest stone on
+    // this page is above the budget, all later pages are above budget too.
+    if (minPagePrice !== null && minPagePrice > criteria.price_max) {
+      paginationComplete = true;
+      stopReason = `sorted inventory exceeded price_max on page ${pageNumber}`;
+      debugPages.push({
+        page: pageNumber,
+        stone_count: stones.length,
+        new_codes: 0,
+        cumulative_unique: allStones.length,
+        reported_total: expectedTotal,
+        min_page_price: minPagePrice,
+        max_page_price: maxPagePrice,
+        stopped_for_budget: true
+      });
+      console.log(`Stopping at page ${pageNumber}: cheapest stone is $${minPagePrice}, above $${criteria.price_max}.`);
+      break;
+    }
+
     let newCodesThisPage = 0;
     for (const stone of stones) {
       const code = stone?.diamond_code ? String(stone.diamond_code) : null;
-      if (!code || seenCodes.has(code)) continue;
+      const p = priceNumber(stone.csprice ?? stone.price);
+      if (!code || seenCodes.has(code) || p > criteria.price_max || p < criteria.price_min) continue;
       seenCodes.add(code);
       allStones.push(stone);
       newCodesThisPage += 1;
@@ -213,17 +240,21 @@ try {
       stone_count: stones.length,
       new_codes: newCodesThisPage,
       cumulative_unique: allStones.length,
-      reported_total: expectedTotal
+      reported_total: expectedTotal,
+      min_page_price: minPagePrice,
+      max_page_price: maxPagePrice
     });
 
-    console.log(`Inventory page ${pageNumber}: ${stones.length} stones, ${allStones.length}/${expectedTotal ?? "?"} unique collected`);
+    console.log(`Inventory page ${pageNumber}: ${stones.length} stones, ${allStones.length} within budget collected`);
 
-    if (expectedTotal !== null && allStones.length >= expectedTotal) {
+    if (stones.length === 0) {
       paginationComplete = true;
+      stopReason = "empty page";
       break;
     }
-    if (stones.length === 0 || newCodesThisPage === 0) {
+    if (newCodesThisPage === 0 && maxPagePrice !== null && maxPagePrice <= criteria.price_max) {
       paginationComplete = true;
+      stopReason = "no new in-budget codes";
       break;
     }
   }
@@ -232,9 +263,9 @@ try {
   fs.writeFileSync("screen-debug-response.json", JSON.stringify(debugPages, null, 2));
   fs.writeFileSync("screen-debug-raw-stones.json", JSON.stringify(allStones.slice(0, 50), null, 2));
 
-  if (allStones.length === 0) throw new Error("lazyloadDiamond returned no stones.");
+  if (allStones.length === 0) throw new Error("No stones were collected within the requested budget.");
   if (!paginationComplete) {
-    throw new Error(`Inventory scan hit the ${MAX_PAGES}-page safety limit before completion (${allStones.length}/${expectedTotal ?? "unknown"} stones). Refusing to report incomplete screening results.`);
+    throw new Error(`Budget-limited inventory scan hit the ${MAX_PAGES}-page safety limit before reaching the end of the <= $${criteria.price_max} inventory. Refusing incomplete results.`);
   }
 
   const normalized = allStones.map(stone => ({
@@ -291,8 +322,9 @@ try {
     currency: "CAD",
     criteria,
     inventory_reported_total: expectedTotal,
-    inventory_stones_found: allStones.length,
-    pagination_complete: paginationComplete,
+    inventory_stones_found_within_budget: allStones.length,
+    pagination_complete_for_budget: paginationComplete,
+    stop_reason: stopReason,
     rows_with_ratio_depth_table: rowsWithGeometry.length,
     geometry_match_count: geometryMatches.length,
     match_count: matches.length,
