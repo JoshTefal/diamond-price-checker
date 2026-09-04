@@ -41,6 +41,9 @@ jobs:
           path: |
             debug-response.txt
             price.json
+            blocked-page.png
+            failure-screenshot.png
+            successful-check.png
           if-no-files-found: ignore
 
       - name: Save latest result
