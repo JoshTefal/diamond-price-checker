@@ -4,20 +4,15 @@ import path from "path";
 
 const REQUEST_FILE = "screen-request.json";
 const OUTPUT_FILE = "screen-results.json";
-const DEBUG_REQUEST_FILE = "screen-debug-request.txt";
-const DEBUG_RESPONSE_FILE = "screen-debug-response.json";
-const DEBUG_RAW_FILE = "screen-debug-raw-stones.json";
 
-if (!fs.existsSync(REQUEST_FILE)) {
-  throw new Error(`${REQUEST_FILE} is missing.`);
-}
-
+if (!fs.existsSync(REQUEST_FILE)) throw new Error(`${REQUEST_FILE} is missing.`);
 const request = JSON.parse(fs.readFileSync(REQUEST_FILE, "utf8"));
 
 function stringList(value, fallback) {
   const source = value ?? fallback;
-  const values = Array.isArray(source) ? source : [source];
-  return values.map(v => String(v).trim().toUpperCase()).filter(Boolean);
+  return (Array.isArray(source) ? source : [source])
+    .map(v => String(v).trim().toUpperCase())
+    .filter(Boolean);
 }
 
 const criteria = {
@@ -30,8 +25,8 @@ const criteria = {
   table_max: Number(request.table_max ?? 58),
   shape: String(request.shape ?? "Oval"),
   stone_type: String(request.stone_type ?? "Lab-grown"),
-  colors: stringList(request.colors ?? request.color, ["E"]),
-  clarities: stringList(request.clarities ?? request.clarity, ["VVS2"]),
+  colors: stringList(request.colors ?? request.color, ["D", "E"]),
+  clarities: stringList(request.clarities ?? request.clarity, ["FL", "IF", "VVS1", "VVS2"]),
   certificates: stringList(request.certificates ?? request.certificate, ["IGI"]),
   polish: stringList(request.polish, ["EX"]),
   symmetry: stringList(request.symmetry, ["EX"]),
@@ -40,19 +35,14 @@ const criteria = {
 
 const PRODUCT_URL =
   "https://www.diamondsfactory.ca/design/hidden-halo-diamond-engagement-rings-clrn0757601" +
-  "?metal_purity=PL_950_W" +
-  "&ring_size=R15_7" +
-  "&stone_shape=OVL" +
-  "&stone_type=LAB" +
-  "&store_id=6";
+  "?metal_purity=PL_950_W&ring_size=R15_7&stone_shape=OVL&stone_type=LAB&store_id=6";
 
 const LAZYLOAD_URL =
   "https://www.diamondsfactory.ca/index.php?route=product/product/lazyloadDiamond";
 
-const PROFILE_DIR =
-  process.platform === "win32"
-    ? "C:\\diamond-price-checker-profile"
-    : path.resolve("./chrome-profile");
+const PROFILE_DIR = process.platform === "win32"
+  ? "C:\\diamond-price-checker-profile"
+  : path.resolve("./chrome-profile");
 
 function parseNumber(value) {
   if (value === null || value === undefined || value === "") return null;
@@ -70,60 +60,30 @@ function normalizeText(value) {
 
 function normalizeQuality(value, field) {
   const v = normalizeText(value);
-  if (!v) return "";
-
   const aliases = {
-    polish: {
-      EXCELLENT: "EX",
-      EX: "EX",
-      VERYGOOD: "VG",
-      "VERY GOOD": "VG",
-      VG: "VG",
-      GOOD: "G",
-      G: "G"
-    },
-    symmetry: {
-      EXCELLENT: "EX",
-      EX: "EX",
-      VERYGOOD: "VG",
-      "VERY GOOD": "VG",
-      VG: "VG",
-      GOOD: "G",
-      G: "G"
-    },
+    polish: { EXCELLENT: "EX", EX: "EX", "VERY GOOD": "VG", VERYGOOD: "VG", VG: "VG" },
+    symmetry: { EXCELLENT: "EX", EX: "EX", "VERY GOOD": "VG", VERYGOOD: "VG", VG: "VG" },
     fluorescence: {
-      FNO: "FNO",
-      NO: "FNO",
-      NONE: "FNO",
-      "NO FLUORESCENCE": "FNO",
-      FAINT: "FNT",
-      FNT: "FNT",
-      MEDIUM: "MED",
-      MED: "MED",
-      STRONG: "STR",
-      STR: "STR",
-      "VERY STRONG": "VST",
-      VST: "VST"
+      FNO: "FNO", NO: "FNO", NONE: "FNO", "NO FLUORESCENCE": "FNO",
+      FAINT: "FNT", FNT: "FNT", MEDIUM: "MED", MED: "MED",
+      STRONG: "STR", STR: "STR", "VERY STRONG": "VST", VST: "VST"
     }
   };
-
   return aliases[field]?.[v] ?? v;
 }
 
 function matchesAllowed(value, allowed, field = null) {
   if (!allowed || allowed.length === 0) return true;
   const actual = field ? normalizeQuality(value, field) : normalizeText(value);
-  const normalizedAllowed = field
-    ? allowed.map(v => normalizeQuality(v, field))
-    : allowed.map(normalizeText);
-  return normalizedAllowed.includes(actual);
+  const wanted = field ? allowed.map(v => normalizeQuality(v, field)) : allowed.map(normalizeText);
+  return wanted.includes(actual);
 }
 
 function buildPayload(pageNumber) {
   const p = new URLSearchParams();
   p.set("stone_shape", "OVL");
-  p.set("stone_carat_min", String(criteria.carat_min.toFixed(2)));
-  p.set("stone_carat_max", String(criteria.carat_max.toFixed(2)));
+  p.set("stone_carat_min", criteria.carat_min.toFixed(2));
+  p.set("stone_carat_max", criteria.carat_max.toFixed(2));
   p.set("stone_clarity", "");
   p.set("stone_intensity", "");
   p.set("stone_color", "");
@@ -163,9 +123,7 @@ function distribution(items, getter) {
     const key = String(getter(item) ?? "<null>");
     counts[key] = (counts[key] || 0) + 1;
   }
-  return Object.fromEntries(
-    Object.entries(counts).sort((a, b) => b[1] - a[1])
-  );
+  return Object.fromEntries(Object.entries(counts).sort((a, b) => b[1] - a[1]));
 }
 
 const context = await chromium.launchPersistentContext(PROFILE_DIR, {
@@ -180,17 +138,13 @@ const pages = context.pages();
 const page = pages.length ? pages[0] : await context.newPage();
 
 try {
-  console.log("Opening Diamonds Factory product page to establish a normal browser session...");
+  console.log("Opening Diamonds Factory product page...");
   console.log("Criteria:", criteria);
-
   await page.goto(PRODUCT_URL, { waitUntil: "domcontentloaded", timeout: 90000 });
   await page.waitForTimeout(4000);
 
   const bodyText = await page.locator("body").innerText().catch(() => "");
-  if (
-    bodyText.includes("Sorry, you have been blocked") ||
-    bodyText.includes("You are unable to access diamondsfactory.ca")
-  ) {
+  if (bodyText.includes("Sorry, you have been blocked") || bodyText.includes("You are unable to access diamondsfactory.ca")) {
     throw new Error("Diamonds Factory presented a Cloudflare block page.");
   }
 
@@ -204,38 +158,30 @@ try {
 
   const allStones = [];
   const seenCodes = new Set();
-  const debugResponses = [];
+  const debugPages = [];
+  let expectedTotal = null;
   let firstPayload = null;
+  let paginationComplete = false;
+  const MAX_PAGES = 500;
 
-  for (let pageNumber = 1; pageNumber <= 50; pageNumber++) {
+  for (let pageNumber = 1; pageNumber <= MAX_PAGES; pageNumber++) {
     const payload = buildPayload(pageNumber);
     if (!firstPayload) firstPayload = payload.toString();
 
-    console.log(`Requesting inventory page ${pageNumber}...`);
+    const response = await page.evaluate(async ({ url, body }) => {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        credentials: "include",
+        body
+      });
+      return { status: r.status, ok: r.ok, text: await r.text() };
+    }, { url: LAZYLOAD_URL, body: payload.toString() });
 
-    const response = await page.evaluate(
-      async ({ url, body }) => {
-        const r = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest"
-          },
-          credentials: "include",
-          body
-        });
-        return {
-          status: r.status,
-          ok: r.ok,
-          text: await r.text()
-        };
-      },
-      { url: LAZYLOAD_URL, body: payload.toString() }
-    );
-
-    if (!response.ok) {
-      throw new Error(`lazyloadDiamond returned HTTP ${response.status} on page ${pageNumber}.`);
-    }
+    if (!response.ok) throw new Error(`lazyloadDiamond returned HTTP ${response.status} on page ${pageNumber}.`);
 
     let json;
     try {
@@ -245,16 +191,12 @@ try {
       throw new Error(`lazyloadDiamond did not return JSON on page ${pageNumber}.`);
     }
 
+    if (expectedTotal === null) {
+      expectedTotal = parseNumber(json.stone_total);
+      console.log(`Diamonds Factory reports ${expectedTotal ?? "unknown"} total stones for this inventory request.`);
+    }
+
     const stones = Array.isArray(json.stones) ? json.stones : [];
-    debugResponses.push({
-      page: pageNumber,
-      status: response.status,
-      stone_count: stones.length,
-      sample_codes: stones.slice(0, 10).map(s => s.diamond_code)
-    });
-
-    console.log(`Inventory page ${pageNumber}: ${stones.length} stones`);
-
     let newCodesThisPage = 0;
     for (const stone of stones) {
       const code = stone?.diamond_code ? String(stone.diamond_code) : null;
@@ -264,15 +206,33 @@ try {
       newCodesThisPage += 1;
     }
 
-    if (stones.length === 0 || newCodesThisPage === 0) break;
+    debugPages.push({
+      page: pageNumber,
+      stone_count: stones.length,
+      new_codes: newCodesThisPage,
+      cumulative_unique: allStones.length,
+      reported_total: expectedTotal
+    });
+
+    console.log(`Inventory page ${pageNumber}: ${stones.length} stones, ${allStones.length}/${expectedTotal ?? "?"} unique collected`);
+
+    if (expectedTotal !== null && allStones.length >= expectedTotal) {
+      paginationComplete = true;
+      break;
+    }
+    if (stones.length === 0 || newCodesThisPage === 0) {
+      paginationComplete = true;
+      break;
+    }
   }
 
-  fs.writeFileSync(DEBUG_REQUEST_FILE, firstPayload || "");
-  fs.writeFileSync(DEBUG_RESPONSE_FILE, JSON.stringify(debugResponses, null, 2));
-  fs.writeFileSync(DEBUG_RAW_FILE, JSON.stringify(allStones.slice(0, 50), null, 2));
+  fs.writeFileSync("screen-debug-request.txt", firstPayload || "");
+  fs.writeFileSync("screen-debug-response.json", JSON.stringify(debugPages, null, 2));
+  fs.writeFileSync("screen-debug-raw-stones.json", JSON.stringify(allStones.slice(0, 50), null, 2));
 
-  if (allStones.length === 0) {
-    throw new Error("lazyloadDiamond returned no stones for the requested 2.00-2.25 ct oval lab-grown range.");
+  if (allStones.length === 0) throw new Error("lazyloadDiamond returned no stones.");
+  if (!paginationComplete) {
+    throw new Error(`Inventory scan hit the ${MAX_PAGES}-page safety limit before completion (${allStones.length}/${expectedTotal ?? "unknown"} stones). Refusing to report incomplete screening results.`);
   }
 
   const normalized = allStones.map(stone => ({
@@ -302,47 +262,23 @@ try {
     price_number: priceNumber(stone.csprice ?? stone.price)
   }));
 
-  const rowsWithGeometry = normalized.filter(
-    d => d.ratio_number !== null && d.depth_number !== null && d.table_number !== null
-  );
-
   const geometryMatches = normalized.filter(d =>
-    d.carat_number !== null &&
-    d.carat_number >= criteria.carat_min &&
-    d.carat_number <= criteria.carat_max &&
-    d.ratio_number !== null &&
-    d.ratio_number >= criteria.ratio_min &&
-    d.ratio_number <= criteria.ratio_max &&
-    d.depth_number !== null &&
-    d.depth_number < criteria.depth_max &&
-    d.table_number !== null &&
-    d.table_number >= criteria.table_min &&
-    d.table_number <= criteria.table_max
+    d.carat_number !== null && d.carat_number >= criteria.carat_min && d.carat_number <= criteria.carat_max &&
+    d.ratio_number !== null && d.ratio_number >= criteria.ratio_min && d.ratio_number <= criteria.ratio_max &&
+    d.depth_number !== null && d.depth_number < criteria.depth_max &&
+    d.table_number !== null && d.table_number >= criteria.table_min && d.table_number <= criteria.table_max
   );
 
-  const matches = geometryMatches
-    .filter(d =>
-      matchesAllowed(d.color, criteria.colors) &&
-      matchesAllowed(d.clarity, criteria.clarities) &&
-      matchesAllowed(d.certificate, criteria.certificates) &&
-      matchesAllowed(d.polish, criteria.polish, "polish") &&
-      matchesAllowed(d.symmetry, criteria.symmetry, "symmetry") &&
-      matchesAllowed(d.fluorescence, criteria.fluorescence, "fluorescence")
-    )
-    .sort((a, b) => a.price_number - b.price_number);
+  const matches = geometryMatches.filter(d =>
+    matchesAllowed(d.color, criteria.colors) &&
+    matchesAllowed(d.clarity, criteria.clarities) &&
+    matchesAllowed(d.certificate, criteria.certificates) &&
+    matchesAllowed(d.polish, criteria.polish, "polish") &&
+    matchesAllowed(d.symmetry, criteria.symmetry, "symmetry") &&
+    matchesAllowed(d.fluorescence, criteria.fluorescence, "fluorescence")
+  ).sort((a, b) => a.price_number - b.price_number);
 
-  const diagnostics = {
-    geometry_match_count: geometryMatches.length,
-    geometry_quality_distributions: {
-      color: distribution(geometryMatches, d => d.color),
-      clarity: distribution(geometryMatches, d => d.clarity),
-      certificate: distribution(geometryMatches, d => d.certificate),
-      polish: distribution(geometryMatches, d => d.polish),
-      symmetry: distribution(geometryMatches, d => d.symmetry),
-      fluorescence: distribution(geometryMatches, d => d.fluorescence)
-    },
-    sample_geometry_matches: geometryMatches.slice(0, 20)
-  };
+  const rowsWithGeometry = normalized.filter(d => d.ratio_number !== null && d.depth_number !== null && d.table_number !== null);
 
   const result = {
     success: true,
@@ -351,39 +287,38 @@ try {
     source: "Diamonds Factory Canada",
     currency: "CAD",
     criteria,
+    inventory_reported_total: expectedTotal,
     inventory_stones_found: allStones.length,
+    pagination_complete: paginationComplete,
     rows_with_ratio_depth_table: rowsWithGeometry.length,
+    geometry_match_count: geometryMatches.length,
     match_count: matches.length,
     matches,
-    diagnostics
+    diagnostics: {
+      geometry_quality_distributions: {
+        color: distribution(geometryMatches, d => d.color),
+        clarity: distribution(geometryMatches, d => d.clarity),
+        certificate: distribution(geometryMatches, d => d.certificate),
+        polish: distribution(geometryMatches, d => d.polish),
+        symmetry: distribution(geometryMatches, d => d.symmetry),
+        fluorescence: distribution(geometryMatches, d => d.fluorescence)
+      }
+    }
   };
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
-
   await page.screenshot({ path: "screen-success.png", fullPage: true });
 } catch (error) {
   console.error("Diamond screen failed:", error);
-
-  const result = {
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify({
     success: false,
     checked_at: new Date().toISOString(),
     requested_at: request.requested_at || null,
     criteria,
     error: error.message
-  };
-
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2));
-
-  try {
-    fs.writeFileSync("screen-page.html", await page.content());
-    fs.writeFileSync("screen-page-text.txt", await page.locator("body").innerText());
-  } catch {}
-
-  try {
-    await page.screenshot({ path: "screen-failure.png", fullPage: true });
-  } catch {}
-
+  }, null, 2));
+  try { await page.screenshot({ path: "screen-failure.png", fullPage: true }); } catch {}
   process.exitCode = 1;
 } finally {
   await context.close();
