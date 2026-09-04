@@ -2,7 +2,14 @@ import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
 
-const DIAMOND_CODE = process.env.DIAMOND_CODE || "LG789634401";
+const requestFile = fs.existsSync("request.json")
+  ? JSON.parse(fs.readFileSync("request.json", "utf8"))
+  : {};
+
+const DIAMOND_CODE =
+  process.env.DIAMOND_CODE ||
+  requestFile.diamond_code ||
+  "LG789634401";
 
 const PRODUCT_URL =
   "https://www.diamondsfactory.ca/design/hidden-halo-diamond-engagement-rings-clrn0757601" +
@@ -31,9 +38,9 @@ const page = pages.length ? pages[0] : await context.newPage();
 
 try {
   console.log(`Opening Diamonds Factory for ${DIAMOND_CODE}...`);
+  console.log("Request source:", requestFile);
   console.log("Product URL:", PRODUCT_URL);
 
-  // Capture only pricing generated AFTER we deliberately select the target diamond.
   page.on("request", request => {
     try {
       if (!allowPricingCapture) return;
@@ -77,18 +84,13 @@ try {
     }
   });
 
-  // Save the specific-stone AJAX response for debugging.
   page.on("response", async response => {
     try {
       const url = response.url();
-
-      if (!url.includes("route=product/product/lazyloadDiamond")) {
-        return;
-      }
+      if (!url.includes("route=product/product/lazyloadDiamond")) return;
 
       searchResponseSeen = true;
       const text = await response.text().catch(() => "");
-
       fs.writeFileSync("debug-response.txt", text || "<empty response>");
 
       console.log(
@@ -115,7 +117,6 @@ try {
   console.log("Page title:", await page.title());
   console.log("Current URL:", page.url());
 
-  // Accept cookies if shown.
   try {
     const buttons = [
       page.getByText("Accept All Cookies", { exact: true }),
@@ -184,7 +185,6 @@ try {
 
   console.log(`Searching specifically for ${DIAMOND_CODE}...`);
 
-  // Wait for the search request at the same time we click.
   const searchRequestPromise = page
     .waitForRequest(
       req => req.url().includes("route=product/product/lazyloadDiamond"),
@@ -211,7 +211,6 @@ try {
 
   const diamondSelector = `[diamondcode="${DIAMOND_CODE}"]`;
 
-  // Give the search response time to update the DOM, but fail with diagnostics instead of a blind 60 s timeout.
   const found = await page
     .waitForSelector(diamondSelector, {
       state: "attached",
@@ -276,7 +275,6 @@ try {
     throw new Error("Diamond found, but stone ID was missing.");
   }
 
-  // Discard any page-load pricing and begin capturing only now.
   pricingData = null;
   allowPricingCapture = true;
 
@@ -308,6 +306,7 @@ try {
   const result = {
     success: true,
     checked_at: new Date().toISOString(),
+    requested_at: requestFile.requested_at || null,
     source: "Diamonds Factory Canada",
     currency: "CAD",
     product: {
@@ -340,6 +339,7 @@ try {
   const result = {
     success: false,
     checked_at: new Date().toISOString(),
+    requested_at: requestFile.requested_at || null,
     diamond_code: DIAMOND_CODE,
     error: error.message
   };
