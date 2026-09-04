@@ -18,6 +18,8 @@ function stringList(value, fallback) {
 const criteria = {
   carat_min: Number(request.carat_min ?? 2.0),
   carat_max: Number(request.carat_max ?? 2.25),
+  price_min: Number(request.price_min ?? 100),
+  price_max: Number(request.price_max ?? 3000),
   ratio_min: Number(request.ratio_min ?? 1.3),
   ratio_max: Number(request.ratio_max ?? 1.5),
   depth_max: Number(request.depth_max ?? 63),
@@ -92,8 +94,8 @@ function buildPayload(pageNumber) {
   p.set("stone_polish", "");
   p.set("stone_symmetry", "");
   p.set("stone_fluorescence", "");
-  p.set("stone_price_min", "100");
-  p.set("stone_price_max", "5000000");
+  p.set("stone_price_min", String(criteria.price_min));
+  p.set("stone_price_max", String(criteria.price_max));
   p.set("show_image", "");
   p.set("show_video", "");
   p.set("show_instock", "");
@@ -193,7 +195,7 @@ try {
 
     if (expectedTotal === null) {
       expectedTotal = parseNumber(json.stone_total);
-      console.log(`Diamonds Factory reports ${expectedTotal ?? "unknown"} total stones for this inventory request.`);
+      console.log(`Diamonds Factory reports ${expectedTotal ?? "unknown"} total stones within the requested price range.`);
     }
 
     const stones = Array.isArray(json.stones) ? json.stones : [];
@@ -263,6 +265,7 @@ try {
   }));
 
   const geometryMatches = normalized.filter(d =>
+    d.price_number >= criteria.price_min && d.price_number <= criteria.price_max &&
     d.carat_number !== null && d.carat_number >= criteria.carat_min && d.carat_number <= criteria.carat_max &&
     d.ratio_number !== null && d.ratio_number >= criteria.ratio_min && d.ratio_number <= criteria.ratio_max &&
     d.depth_number !== null && d.depth_number < criteria.depth_max &&
