@@ -11,6 +11,14 @@ if (!fs.existsSync(REQUEST_FILE)) {
 
 const request = JSON.parse(fs.readFileSync(REQUEST_FILE, "utf8"));
 
+function stringList(value, fallback) {
+  const source = value ?? fallback;
+  const values = Array.isArray(source) ? source : [source];
+  return values
+    .map(v => String(v).trim().toUpperCase())
+    .filter(Boolean);
+}
+
 const criteria = {
   carat_min: Number(request.carat_min ?? 2.0),
   carat_max: Number(request.carat_max ?? 2.25),
@@ -20,7 +28,15 @@ const criteria = {
   table_min: Number(request.table_min ?? 53),
   table_max: Number(request.table_max ?? 58),
   shape: String(request.shape ?? "Oval"),
-  stone_type: String(request.stone_type ?? "Lab-grown")
+  stone_type: String(request.stone_type ?? "Lab-grown"),
+
+  // Default quality profile = original diamond LG789634401.
+  colors: stringList(request.colors ?? request.color, ["E"]),
+  clarities: stringList(request.clarities ?? request.clarity, ["VVS2"]),
+  certificates: stringList(request.certificates ?? request.certificate, ["IGI"]),
+  polish: stringList(request.polish, ["EX"]),
+  symmetry: stringList(request.symmetry, ["EX"]),
+  fluorescence: stringList(request.fluorescence, ["FNO"])
 };
 
 const PRODUCT_URL =
@@ -44,6 +60,17 @@ function parseNumber(value) {
 
 function priceNumber(value) {
   return parseNumber(value) ?? Number.POSITIVE_INFINITY;
+}
+
+function normalizeText(value) {
+  return value === null || value === undefined
+    ? ""
+    : String(value).trim().toUpperCase();
+}
+
+function matchesAllowed(value, allowed) {
+  if (!allowed || allowed.length === 0) return true;
+  return allowed.includes(normalizeText(value));
 }
 
 const context = await chromium.launchPersistentContext(PROFILE_DIR, {
@@ -100,8 +127,6 @@ try {
 
   await page.waitForTimeout(1000);
 
-  // Encourage any lazy-loaded inventory to populate. Stop after the row count
-  // has remained unchanged for several passes.
   let previousCount = -1;
   let stablePasses = 0;
 
@@ -114,7 +139,6 @@ try {
 
     previousCount = count;
 
-    // Click a normal "more" control if the site exposes one.
     const more = page
       .getByText(/^(load more|show more|view more|more diamonds)$/i)
       .first();
@@ -218,7 +242,6 @@ try {
     });
   });
 
-  // Deduplicate in case the same inventory row appears in desktop/mobile markup.
   const uniqueByCode = new Map();
   for (const row of rows) {
     if (row.diamond_code && !uniqueByCode.has(row.diamond_code)) {
@@ -268,7 +291,13 @@ try {
       d.depth_number < criteria.depth_max &&
       d.table_number !== null &&
       d.table_number >= criteria.table_min &&
-      d.table_number <= criteria.table_max
+      d.table_number <= criteria.table_max &&
+      matchesAllowed(d.color, criteria.colors) &&
+      matchesAllowed(d.clarity, criteria.clarities) &&
+      matchesAllowed(d.certificate, criteria.certificates) &&
+      matchesAllowed(d.polish, criteria.polish) &&
+      matchesAllowed(d.symmetry, criteria.symmetry) &&
+      matchesAllowed(d.fluorescence, criteria.fluorescence)
     )
     .sort((a, b) => a.price_number - b.price_number)
     .map(({ raw_attributes, row_text, ...d }) => d);
