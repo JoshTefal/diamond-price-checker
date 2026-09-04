@@ -1,6 +1,39 @@
 {
-  "success": false,
-  "checked_at": "2026-09-04T21:55:56.609Z",
-  "diamond_code": "LG602302388",
-  "error": "page.waitForSelector: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[diamondcode=\"LG602302388\"]')\u001b[22m\n"
+  "success": true,
+  "checked_at": "2026-09-04T22:01:21.469Z",
+  "source": "Diamonds Factory Canada",
+  "currency": "CAD",
+  "product": {
+    "code": "CLRN07576_01",
+    "name": "Hidden Halo Diamond Engagement Ring"
+  },
+  "configuration": {
+    "metal": "Platinum",
+    "metal_code": "PL_950_W",
+    "ring_size": "R15_7",
+    "stone_type": "Lab-grown"
+  },
+  "diamond": {
+    "diamond_code": "LG602302388",
+    "price": "$591",
+    "carat": "0.93",
+    "color": "D",
+    "clarity": "VS2",
+    "certificate": "IGI",
+    "certificate_number": "602302388",
+    "cut": "",
+    "polish": "EX",
+    "symmetry": "VG",
+    "fluorescence": "FNO",
+    "measurements": "8.03 x 5.50 x 3.34",
+    "stone_id": "877148"
+  },
+  "pricing": {
+    "setting_price": 2652,
+    "diamond_price": 591,
+    "subtotal": 3243,
+    "discount": 486.45,
+    "discount_percent": 15,
+    "final_price": 2756.55
+  }
 }
