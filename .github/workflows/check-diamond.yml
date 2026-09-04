@@ -48,7 +48,7 @@ jobs:
 
       - name: Save latest result
         if: always()
-        shell: powershell
+        shell: cmd
         run: |
           git config user.name "diamond-price-bot"
           git config user.email "diamond-price-bot@users.noreply.github.com"
@@ -56,12 +56,10 @@ jobs:
           git add price.json
 
           git diff --cached --quiet
-
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "No changes"
-          }
-          else {
+          if %ERRORLEVEL% EQU 0 (
+            echo No changes
+          ) else (
             git commit -m "Update diamond price"
             git push
-          }
+          )
           fi
