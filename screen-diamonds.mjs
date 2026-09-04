@@ -6,6 +6,7 @@ const REQUEST_FILE = "screen-request.json";
 const OUTPUT_FILE = "screen-results.json";
 const DEBUG_REQUEST_FILE = "screen-debug-request.txt";
 const DEBUG_RESPONSE_FILE = "screen-debug-response.json";
+const DEBUG_RAW_FILE = "screen-debug-raw-stones.json";
 
 if (!fs.existsSync(REQUEST_FILE)) {
   throw new Error(`${REQUEST_FILE} is missing.`);
@@ -67,9 +68,55 @@ function normalizeText(value) {
   return value === null || value === undefined ? "" : String(value).trim().toUpperCase();
 }
 
-function matchesAllowed(value, allowed) {
+function normalizeQuality(value, field) {
+  const v = normalizeText(value);
+  if (!v) return "";
+
+  const aliases = {
+    polish: {
+      EXCELLENT: "EX",
+      EX: "EX",
+      VERYGOOD: "VG",
+      "VERY GOOD": "VG",
+      VG: "VG",
+      GOOD: "G",
+      G: "G"
+    },
+    symmetry: {
+      EXCELLENT: "EX",
+      EX: "EX",
+      VERYGOOD: "VG",
+      "VERY GOOD": "VG",
+      VG: "VG",
+      GOOD: "G",
+      G: "G"
+    },
+    fluorescence: {
+      FNO: "FNO",
+      NO: "FNO",
+      NONE: "FNO",
+      "NO FLUORESCENCE": "FNO",
+      FAINT: "FNT",
+      FNT: "FNT",
+      MEDIUM: "MED",
+      MED: "MED",
+      STRONG: "STR",
+      STR: "STR",
+      "VERY STRONG": "VST",
+      VST: "VST"
+    }
+  };
+
+  return aliases[field]?.[v] ?? v;
+}
+
+function matchesAllowed(value, allowed, field = null) {
   if (!allowed || allowed.length === 0) return true;
-  return allowed.includes(normalizeText(value));
+  const actual = field ? normalizeQuality(value, field) : normalizeText(value);
+  const normalizedAllowed = field
+    ? allowed.map(v => normalizeQuality(v, field))
+    : allowed.map(normalizeText);
+  return normalizedAllowed.includes(actual);
 }
 
 function buildPayload(pageNumber) {
@@ -110,6 +157,17 @@ function buildPayload(pageNumber) {
   return p;
 }
 
+function distribution(items, getter) {
+  const counts = {};
+  for (const item of items) {
+    const key = String(getter(item) ?? "<null>");
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  return Object.fromEntries(
+    Object.entries(counts).sort((a, b) => b[1] - a[1])
+  );
+}
+
 const context = await chromium.launchPersistentContext(PROFILE_DIR, {
   channel: "chrome",
   headless: false,
@@ -144,10 +202,6 @@ try {
     }
   } catch {}
 
-  // This request shape was captured from a successful Diamonds Factory
-  // lazyloadDiamond request made by the existing exact-diamond checker.
-  // We keep the browser session/cookies, remove the exact-code search, and
-  // ask the same endpoint for the requested oval carat range.
   const allStones = [];
   const seenCodes = new Set();
   const debugResponses = [];
@@ -215,6 +269,7 @@ try {
 
   fs.writeFileSync(DEBUG_REQUEST_FILE, firstPayload || "");
   fs.writeFileSync(DEBUG_RESPONSE_FILE, JSON.stringify(debugResponses, null, 2));
+  fs.writeFileSync(DEBUG_RAW_FILE, JSON.stringify(allStones.slice(0, 50), null, 2));
 
   if (allStones.length === 0) {
     throw new Error("lazyloadDiamond returned no stones for the requested 2.00-2.25 ct oval lab-grown range.");
@@ -230,10 +285,10 @@ try {
     certificate: stone.lab ?? null,
     certificate_number: stone.cert ?? null,
     cut: stone.cut ?? null,
-    polish: stone.polish ?? null,
-    symmetry: stone.symmetry ?? null,
-    fluorescence: stone.fluorescence ?? null,
-    measurements: stone.meas ?? null,
+    polish: stone.polish ?? stone.pol ?? null,
+    symmetry: stone.symmetry ?? stone.symm ?? null,
+    fluorescence: stone.fluorescence ?? stone.fluor ?? null,
+    measurements: stone.meas ?? stone.measurements ?? null,
     ratio: stone.ratio ?? null,
     depth: stone.depth ?? null,
     table: stone.table ?? null,
@@ -251,27 +306,43 @@ try {
     d => d.ratio_number !== null && d.depth_number !== null && d.table_number !== null
   );
 
-  const matches = normalized
+  const geometryMatches = normalized.filter(d =>
+    d.carat_number !== null &&
+    d.carat_number >= criteria.carat_min &&
+    d.carat_number <= criteria.carat_max &&
+    d.ratio_number !== null &&
+    d.ratio_number >= criteria.ratio_min &&
+    d.ratio_number <= criteria.ratio_max &&
+    d.depth_number !== null &&
+    d.depth_number < criteria.depth_max &&
+    d.table_number !== null &&
+    d.table_number >= criteria.table_min &&
+    d.table_number <= criteria.table_max
+  );
+
+  const matches = geometryMatches
     .filter(d =>
-      d.carat_number !== null &&
-      d.carat_number >= criteria.carat_min &&
-      d.carat_number <= criteria.carat_max &&
-      d.ratio_number !== null &&
-      d.ratio_number >= criteria.ratio_min &&
-      d.ratio_number <= criteria.ratio_max &&
-      d.depth_number !== null &&
-      d.depth_number < criteria.depth_max &&
-      d.table_number !== null &&
-      d.table_number >= criteria.table_min &&
-      d.table_number <= criteria.table_max &&
       matchesAllowed(d.color, criteria.colors) &&
       matchesAllowed(d.clarity, criteria.clarities) &&
       matchesAllowed(d.certificate, criteria.certificates) &&
-      matchesAllowed(d.polish, criteria.polish) &&
-      matchesAllowed(d.symmetry, criteria.symmetry) &&
-      matchesAllowed(d.fluorescence, criteria.fluorescence)
+      matchesAllowed(d.polish, criteria.polish, "polish") &&
+      matchesAllowed(d.symmetry, criteria.symmetry, "symmetry") &&
+      matchesAllowed(d.fluorescence, criteria.fluorescence, "fluorescence")
     )
     .sort((a, b) => a.price_number - b.price_number);
+
+  const diagnostics = {
+    geometry_match_count: geometryMatches.length,
+    geometry_quality_distributions: {
+      color: distribution(geometryMatches, d => d.color),
+      clarity: distribution(geometryMatches, d => d.clarity),
+      certificate: distribution(geometryMatches, d => d.certificate),
+      polish: distribution(geometryMatches, d => d.polish),
+      symmetry: distribution(geometryMatches, d => d.symmetry),
+      fluorescence: distribution(geometryMatches, d => d.fluorescence)
+    },
+    sample_geometry_matches: geometryMatches.slice(0, 20)
+  };
 
   const result = {
     success: true,
@@ -283,7 +354,8 @@ try {
     inventory_stones_found: allStones.length,
     rows_with_ratio_depth_table: rowsWithGeometry.length,
     match_count: matches.length,
-    matches
+    matches,
+    diagnostics
   };
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2));
