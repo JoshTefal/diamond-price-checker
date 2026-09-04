@@ -44,6 +44,10 @@ jobs:
           path: |
             screen-results.json
             screen-debug-attributes.json
+            screen-debug-page.html
+            screen-debug-text.txt
+            screen-lazyload-request.txt
+            screen-lazyload-response.txt
             screen-success.png
             screen-failure.png
           if-no-files-found: ignore
