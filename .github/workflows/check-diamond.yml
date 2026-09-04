@@ -30,7 +30,7 @@ jobs:
 
       - name: Check Diamonds Factory price
         env:
-          DIAMOND_CODE: LG770685786
+          DIAMOND_CODE: LG602302388
         run: node check-price.mjs
 
       - name: Upload debug files
