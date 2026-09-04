@@ -1,7 +1,7 @@
 {
   "success": false,
-  "checked_at": "2026-09-04T23:25:55.840Z",
-  "requested_at": "2026-09-04T23:09:00Z",
+  "checked_at": "2026-09-04T23:33:37.233Z",
+  "requested_at": "2026-09-04T23:24:00Z",
   "criteria": {
     "carat_min": 2,
     "carat_max": 2.25,
@@ -37,5 +37,5 @@
       "FNO"
     ]
   },
-  "error": "Inventory scan hit the 500-page safety limit before completion (4991/6609 stones). Refusing to report incomplete screening results."
+  "error": "Budget-limited inventory scan hit the 500-page safety limit before reaching the end of the <= $3000 inventory. Refusing incomplete results."
 }
