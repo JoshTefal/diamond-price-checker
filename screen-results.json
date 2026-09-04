@@ -1,7 +1,7 @@
 {
   "success": true,
-  "checked_at": "2026-09-04T23:00:38.484Z",
-  "requested_at": "2026-09-04T22:55:00Z",
+  "checked_at": "2026-09-04T23:03:00.579Z",
+  "requested_at": "2026-09-04T23:02:00Z",
   "source": "Diamonds Factory Canada",
   "currency": "CAD",
   "criteria": {
@@ -15,9 +15,13 @@
     "shape": "Oval",
     "stone_type": "Lab-grown",
     "colors": [
+      "D",
       "E"
     ],
     "clarities": [
+      "FL",
+      "IF",
+      "VVS1",
       "VVS2"
     ],
     "certificates": [
