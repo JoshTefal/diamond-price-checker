@@ -1,0 +1,49 @@
+name: Check Diamond Price
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "0 13 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  check-price:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Check Diamonds Factory price
+        env:
+          DIAMOND_CODE: LG789634401
+        run: node check-price.mjs
+
+      - name: Save latest result
+        if: always()
+        run: |
+          git config user.name "diamond-price-bot"
+          git config user.email "diamond-price-bot@users.noreply.github.com"
+
+          git add price.json
+
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Update diamond price"
+            git push
+          fi
