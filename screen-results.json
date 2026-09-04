@@ -1,7 +1,7 @@
 {
   "success": false,
-  "checked_at": "2026-09-04T22:25:51.015Z",
-  "requested_at": "2026-09-04T22:24:00Z",
+  "checked_at": "2026-09-04T22:27:53.029Z",
+  "requested_at": "2026-09-04T22:27:00Z",
   "criteria": {
     "carat_min": 2,
     "carat_max": 2.25,
@@ -11,7 +11,25 @@
     "table_min": 53,
     "table_max": 58,
     "shape": "Oval",
-    "stone_type": "Lab-grown"
+    "stone_type": "Lab-grown",
+    "colors": [
+      "E"
+    ],
+    "clarities": [
+      "VVS2"
+    ],
+    "certificates": [
+      "IGI"
+    ],
+    "polish": [
+      "EX"
+    ],
+    "symmetry": [
+      "EX"
+    ],
+    "fluorescence": [
+      "FNO"
+    ]
   },
   "error": "No diamond rows were found in the inventory grid."
 }
