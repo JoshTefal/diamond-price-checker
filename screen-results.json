@@ -1,7 +1,7 @@
 {
   "success": false,
-  "checked_at": "2026-09-04T22:27:53.029Z",
-  "requested_at": "2026-09-04T22:27:00Z",
+  "checked_at": "2026-09-04T22:37:09.676Z",
+  "requested_at": "2026-09-04T22:31:00Z",
   "criteria": {
     "carat_min": 2,
     "carat_max": 2.25,
@@ -31,5 +31,5 @@
       "FNO"
     ]
   },
-  "error": "No diamond rows were found in the inventory grid."
+  "error": "No diamond rows were found after opening the 1.20-4.00 ct inventory. lazyload response seen: false."
 }
