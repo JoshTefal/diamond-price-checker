@@ -5,7 +5,21 @@ import path from "path";
 const DIAMOND_CODE = process.env.DIAMOND_CODE || "LG789634401";
 
 const PRODUCT_URL =
-  "https://www.diamondsfactory.ca/design/hidden-halo-diamond-engagement-rings-clrn0757601";
+  "https://www.diamondsfactory.ca/design/hidden-halo-diamond-engagement-rings-clrn0757601" +
+  "?carat_weight=2.04" +
+  "&diamond_code=LG789634401" +
+  "&metal_purity=PL_950_W" +
+  "&ring_size=R15_7" +
+  "&stone_carat=200" +
+  "&stone_certificate=IGI" +
+  "&stone_clarity=VVS2" +
+  "&stone_color=E" +
+  "&stone_fluorescence=FNO" +
+  "&stone_polish=EX" +
+  "&stone_shape=OVL" +
+  "&stone_symmetry=EX" +
+  "&stone_type=LAB" +
+  "&store_id=6";
 
 // Dedicated Chrome profile so Diamonds Factory can keep its own cookies/session
 // between price checks without touching your normal Chrome profile.
@@ -38,7 +52,6 @@ try {
 console.log("Current URL:", page.url());
 console.log("Page title:", await page.title());
 
-// Accept cookie banner if it appears
 try {
   const buttons = [
     page.getByText("Accept All Cookies", { exact: true }),
@@ -57,19 +70,6 @@ try {
   console.log("No cookie banner requiring interaction.");
 }
 
-// Accept cookie banner if it appears
-try {
-  const acceptCookies = page.getByText("Accept All Cookies", { exact: true });
-
-  if (await acceptCookies.isVisible({ timeout: 5000 })) {
-    console.log("Cookie banner found. Accepting cookies...");
-    await acceptCookies.click();
-    await page.waitForTimeout(1500);
-  }
-} catch {
-  console.log("No cookie banner requiring interaction.");
-}
-
 // Wait for the hidden stone section to be present
 await page.waitForSelector("#stone_price_grid", {
   state: "attached",
@@ -78,6 +78,20 @@ await page.waitForSelector("#stone_price_grid", {
 
 console.log("Specific-stone section exists.");
 
+const gridInfo = await page.evaluate(() => {
+  const grid = document.querySelector("#stone_price_grid");
+
+  return {
+    exists: !!grid,
+    htmlLength: grid?.innerHTML.length || 0,
+    hasDiamondSearch: !!document.querySelector("#diamondSearch"),
+    diamondCode: document.querySelector("#diamond_code")?.value || null,
+    caratWeight: document.querySelector("#carat_weight")?.value || null
+  };
+});
+
+console.log("Stone grid info:", gridInfo);
+  
 // Reveal it
 await page.evaluate(() => {
   const grid = document.querySelector("#stone_price_grid");
