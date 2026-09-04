@@ -35,56 +35,70 @@ try {
 
   await page.waitForTimeout(5000);
 
-  console.log("Current URL:", page.url());
-  console.log("Page title:", await page.title());
+console.log("Current URL:", page.url());
+console.log("Page title:", await page.title());
 
-  // Detect an obvious Cloudflare block instead of waiting 30 sec for selectors.
-  const bodyText = await page.locator("body").innerText().catch(() => "");
+// Accept cookie banner if it appears
+try {
+  const buttons = [
+    page.getByText("Accept All Cookies", { exact: true }),
+    page.locator("#onetrust-accept-btn-handler")
+  ];
 
-  if (
-    bodyText.includes("Sorry, you have been blocked") ||
-    bodyText.includes("You are unable to access diamondsfactory.ca")
-  ) {
-    await page.screenshot({
-      path: "blocked-page.png",
-      fullPage: true
-    });
-
-    throw new Error(
-      "Diamonds Factory presented a Cloudflare block page in Chrome."
-    );
-  }
-
-  /*
-   * Wait for the actual stone-price area to exist in the DOM.
-   * We use state: attached because Diamonds Factory intentionally hides it.
-   */
-  await page.waitForSelector("#stone_price_grid", {
-    state: "attached",
-    timeout: 60000
-  });
-
-  console.log("Specific-stone section exists.");
-
-  /*
-   * Reveal the hidden section exactly like you did manually in DevTools.
-   */
-  await page.evaluate(() => {
-    const grid = document.querySelector("#stone_price_grid");
-
-    if (grid) {
-      grid.style.setProperty("display", "block", "important");
-      grid.style.visibility = "visible";
-      grid.style.opacity = "1";
+  for (const button of buttons) {
+    if (await button.isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log("Cookie banner found. Accepting cookies...");
+      await button.click();
+      await page.waitForTimeout(1000);
+      break;
     }
-  });
+  }
+} catch {
+  console.log("No cookie banner requiring interaction.");
+}
 
-  await page.waitForSelector("#diamondSearch", {
-    state: "attached",
-    timeout: 30000
-  });
+// Accept cookie banner if it appears
+try {
+  const acceptCookies = page.getByText("Accept All Cookies", { exact: true });
 
-  console.log("Diamond search field found.");
+  if (await acceptCookies.isVisible({ timeout: 5000 })) {
+    console.log("Cookie banner found. Accepting cookies...");
+    await acceptCookies.click();
+    await page.waitForTimeout(1500);
+  }
+} catch {
+  console.log("No cookie banner requiring interaction.");
+}
+
+// Wait for the hidden stone section to be present
+await page.waitForSelector("#stone_price_grid", {
+  state: "attached",
+  timeout: 60000
+});
+
+console.log("Specific-stone section exists.");
+
+// Reveal it
+await page.evaluate(() => {
+  const grid = document.querySelector("#stone_price_grid");
+
+  if (grid) {
+    grid.style.setProperty("display", "block", "important");
+    grid.style.setProperty("visibility", "visible", "important");
+    grid.style.setProperty("opacity", "1", "important");
+  }
+});
+
+// Give the page a moment to render the revealed section
+await page.waitForTimeout(1000);
+
+// Now wait for the input to EXIST, not necessarily be visible yet
+await page.waitForSelector("#diamondSearch", {
+  state: "attached",
+  timeout: 30000
+});
+
+console.log("Diamond search field found.");
 
   const searchBox = page.locator("#diamondSearch");
 
