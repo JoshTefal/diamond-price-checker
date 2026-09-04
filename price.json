@@ -1,6 +1,7 @@
 {
   "success": true,
-  "checked_at": "2026-09-04T22:01:21.469Z",
+  "checked_at": "2026-09-04T22:06:08.116Z",
+  "requested_at": "2026-09-04T22:04:00Z",
   "source": "Diamonds Factory Canada",
   "currency": "CAD",
   "product": {
@@ -14,26 +15,26 @@
     "stone_type": "Lab-grown"
   },
   "diamond": {
-    "diamond_code": "LG602302388",
-    "price": "$591",
-    "carat": "0.93",
-    "color": "D",
-    "clarity": "VS2",
+    "diamond_code": "LG789634401",
+    "price": "$1,819",
+    "carat": "2.04",
+    "color": "E",
+    "clarity": "VVS2",
     "certificate": "IGI",
-    "certificate_number": "602302388",
+    "certificate_number": "789634401",
     "cut": "",
     "polish": "EX",
-    "symmetry": "VG",
+    "symmetry": "EX",
     "fluorescence": "FNO",
-    "measurements": "8.03 x 5.50 x 3.34",
-    "stone_id": "877148"
+    "measurements": "10.34 x 7.23 x 4.30",
+    "stone_id": "115977"
   },
   "pricing": {
-    "setting_price": 2652,
-    "diamond_price": 591,
-    "subtotal": 3243,
-    "discount": 486.45,
+    "setting_price": 3890,
+    "diamond_price": 1819,
+    "subtotal": 5709,
+    "discount": 856.35,
     "discount_percent": 15,
-    "final_price": 2756.55
+    "final_price": 4852.65
   }
 }
