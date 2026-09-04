@@ -2,9 +2,9 @@ name: Check Diamond Price
 
 on:
   workflow_dispatch:
-
-  schedule:
-    - cron: "0 13 * * *"
+  push:
+    paths:
+      - "request.json"
 
 permissions:
   contents: write
@@ -29,8 +29,6 @@ jobs:
         run: npx playwright install chromium
 
       - name: Check Diamonds Factory price
-        env:
-          DIAMOND_CODE: LG602302388
         run: node check-price.mjs
 
       - name: Upload debug files
