@@ -62,4 +62,4 @@ jobs:
             git commit -m "Update diamond price"
             git push
           )
-          fi
+         
