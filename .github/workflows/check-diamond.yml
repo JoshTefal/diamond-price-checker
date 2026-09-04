@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -23,10 +25,13 @@ jobs:
           node-version: "22"
 
       - name: Install dependencies
-        run: npm install
-
-      - name: Install Chromium
-        run: npx playwright install chromium
+        shell: cmd
+        run: |
+          if not exist node_modules\playwright\package.json (
+            npm install --no-audit --no-fund
+          ) else (
+            echo Dependencies already installed
+          )
 
       - name: Check Diamonds Factory price
         run: node check-price.mjs
