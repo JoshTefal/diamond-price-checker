@@ -8,12 +8,13 @@
   "depth_max": 63,
   "table_min": 53,
   "table_max": 58,
-  "colors": ["E"],
-  "clarities": ["VVS2"],
+  "colors": ["D", "E"],
+  "clarities": ["FL", "IF", "VVS1", "VVS2"],
   "certificates": ["IGI"],
   "polish": ["EX"],
   "symmetry": ["EX"],
   "fluorescence": ["FNO"],
-  "requested_at": "2026-09-04T22:55:00Z",
-  "requested_by": "chatgpt"
+  "requested_at": "2026-09-04T23:02:00Z",
+  "requested_by": "chatgpt",
+  "quality_default_interpretation": "same as or better than original LG789634401"
 }
