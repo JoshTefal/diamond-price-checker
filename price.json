@@ -1,7 +1,7 @@
 {
   "success": true,
-  "checked_at": "2026-09-04T22:10:08.267Z",
-  "requested_at": "2026-09-04T22:08:30Z",
+  "checked_at": "2026-09-06T11:06:20.538Z",
+  "requested_at": "2026-09-06T11:05:00Z",
   "source": "Diamonds Factory Canada",
   "currency": "CAD",
   "product": {
@@ -27,14 +27,14 @@
     "symmetry": "EX",
     "fluorescence": "FNO",
     "measurements": "10.34 x 7.23 x 4.30",
-    "stone_id": "115977"
+    "stone_id": "679341"
   },
   "pricing": {
-    "setting_price": 3890,
-    "diamond_price": 1819,
-    "subtotal": 5709,
-    "discount": 856.35,
+    "setting_price": 2629,
+    "diamond_price": 590,
+    "subtotal": 3219,
+    "discount": 482.84999999999997,
     "discount_percent": 15,
-    "final_price": 4852.65
+    "final_price": 2736.15
   }
 }
